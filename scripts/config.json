@@ -1,0 +1,151 @@
+{
+  "site": {
+    "iterations": 600000,
+    "salt": "MQYQ+xwRingJ964Ya+S5Kg=="
+  },
+  "metricool": {
+    "brandId": "2841909",
+    "fuseau": "Europe/Paris",
+    "requetes": {
+      "facebook": {
+        "metrics": [
+          "FBEV17",
+          "FBEV47",
+          "FBEV48",
+          "FBEV04",
+          "FBEV21",
+          "FBEV35",
+          "FBEV49",
+          "FBEV03",
+          "FBEV18",
+          "FBEV19",
+          "FBEV34",
+          "FBEV16",
+          "FBEV13",
+          "FBEV14",
+          "FBEV15"
+        ]
+      },
+      "instagram": {
+        "metrics": [
+          "IGEV01",
+          "IGEV43",
+          "IGEV44",
+          "IGEV04",
+          "IGEV22",
+          "IGEV16",
+          "IGEV05",
+          "IGEV19",
+          "IGEV20",
+          "IGEV21",
+          "IGEV09",
+          "IGEV13",
+          "IGEV14",
+          "IGEV40",
+          "IGEV15",
+          "IGEV23",
+          "IGEV30"
+        ]
+      },
+      "linkedin": {
+        "metrics": [
+          "LIEV01",
+          "LIEV04",
+          "LIEV22",
+          "LIEV21",
+          "LIEV24",
+          "LIEV23",
+          "LIEV20",
+          "LIEV28",
+          "LIEV31"
+        ]
+      },
+      "publicite": {
+        "metrics": [
+          "FAEV01",
+          "FAEV03",
+          "FAEV04",
+          "FAEV05",
+          "KAEV01",
+          "KAEV02",
+          "KAEV03",
+          "KAEV04"
+        ]
+      },
+      "posts_facebook": {
+        "metrics": [
+          "FBPO01",
+          "FBPO03",
+          "FBPO06",
+          "FBPO07",
+          "FBPO12",
+          "FBPO13",
+          "FBPO08",
+          "FBPO14",
+          "FBPO23",
+          "FBPO10"
+        ]
+      },
+      "posts_instagram": {
+        "metrics": [
+          "IGPO01",
+          "IGPO03",
+          "IGPO06",
+          "IGPO07",
+          "IGPO28",
+          "IGPO14",
+          "IGPO10",
+          "IGPO12",
+          "IGPO13",
+          "IGPO08",
+          "IGPO27",
+          "IGPO15"
+        ]
+      },
+      "reels_instagram": {
+        "metrics": [
+          "IGRE01",
+          "IGRE03",
+          "IGRE06",
+          "IGRE23",
+          "IGRE11",
+          "IGRE08",
+          "IGRE09",
+          "IGRE10"
+        ]
+      },
+      "posts_linkedin": {
+        "metrics": [
+          "LIPO01",
+          "LIPO04",
+          "LIPO08",
+          "LIPO12",
+          "LIPO13",
+          "LIPO09",
+          "LIPO10",
+          "LIPO18",
+          "LIPO9999"
+        ]
+      },
+      "campagnes_meta": {
+        "metrics": [
+          "FACA05",
+          "FACA10",
+          "FACA12",
+          "FACA14",
+          "FACA13"
+        ]
+      },
+      "campagnes_tiktok": {
+        "metrics": [
+          "KADC02",
+          "KADC06",
+          "KADC07",
+          "KADC10",
+          "KADC11",
+          "KADC13"
+        ]
+      }
+    }
+  }
+}
