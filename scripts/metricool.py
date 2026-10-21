@@ -168,6 +168,204 @@ def table_posts(lignes, champs, tri, colonnes, limite=5, transformer=None):
     return {"columns": colonnes, "rows": rows[:limite]}
 
 
+PAYS = {
+    "FR": "France", "DZ": "Algérie", "MA": "Maroc", "TN": "Tunisie", "BE": "Belgique", "CH": "Suisse",
+    "LU": "Luxembourg", "ES": "Espagne", "PT": "Portugal", "IT": "Italie", "DE": "Allemagne", "NL": "Pays-Bas",
+    "GB": "Royaume-Uni", "IE": "Irlande", "GR": "Grèce", "PL": "Pologne", "RO": "Roumanie", "HU": "Hongrie",
+    "LT": "Lituanie", "SE": "Suède", "DK": "Danemark", "NO": "Norvège", "FI": "Finlande", "AT": "Autriche",
+    "CZ": "Tchéquie", "SK": "Slovaquie", "BG": "Bulgarie", "HR": "Croatie", "RS": "Serbie", "UA": "Ukraine",
+    "RU": "Russie", "TR": "Turquie", "US": "États-Unis", "CA": "Canada", "MX": "Mexique", "BR": "Brésil",
+    "AR": "Argentine", "CO": "Colombie", "PE": "Pérou", "CL": "Chili", "HT": "Haïti", "CI": "Côte d'Ivoire",
+    "SN": "Sénégal", "CM": "Cameroun", "BJ": "Bénin", "TG": "Togo", "ML": "Mali", "BF": "Burkina Faso",
+    "NE": "Niger", "GN": "Guinée", "GA": "Gabon", "CG": "Congo-Brazzaville", "CD": "RD Congo", "TD": "Tchad",
+    "MG": "Madagascar", "MU": "Maurice", "KM": "Comores", "DJ": "Djibouti", "NG": "Nigeria", "GH": "Ghana",
+    "KE": "Kenya", "TZ": "Tanzanie", "UG": "Ouganda", "ET": "Éthiopie", "ZA": "Afrique du Sud", "EG": "Égypte",
+    "LY": "Libye", "MR": "Mauritanie", "LB": "Liban", "SA": "Arabie saoudite", "AE": "Émirats arabes unis",
+    "QA": "Qatar", "BH": "Bahreïn", "KW": "Koweït", "IL": "Israël", "IR": "Iran", "IQ": "Irak", "IN": "Inde",
+    "PK": "Pakistan", "BD": "Bangladesh", "LK": "Sri Lanka", "CN": "Chine", "HK": "Hong Kong", "TW": "Taïwan",
+    "JP": "Japon", "KR": "Corée du Sud", "VN": "Viêt Nam", "TH": "Thaïlande", "ID": "Indonésie",
+    "PH": "Philippines", "MY": "Malaisie", "SG": "Singapour", "AU": "Australie", "NZ": "Nouvelle-Zélande",
+    "KZ": "Kazakhstan", "RE": "La Réunion", "YT": "Mayotte", "GP": "Guadeloupe", "MQ": "Martinique",
+    "GF": "Guyane", "NC": "Nouvelle-Calédonie", "PF": "Polynésie française", "WF": "Wallis-et-Futuna",
+    "PM": "Saint-Pierre-et-Miquelon", "MC": "Monaco", "AD": "Andorre",
+}
+SECTEURS = {
+    "Transport, logistique, chaîne logistique et stockage": "Transport & logistique",
+    "Technologie, médias et télécommunications": "Tech, médias, télécoms",
+    "Services d'hébergement et de restauration": "Hébergement & restauration",
+    "Services immobiliers et de location de biens matériels": "Immobilier & location",
+    "Hôpitaux et services de santé": "Santé",
+    "Arts, spectacles et activités récréatives": "Arts & loisirs",
+    "Agriculture, sylviculture et pêche": "Agriculture",
+    "Services administratifs et de soutien": "Services administratifs",
+}
+FONCTIONS = {
+    "Services à la communauté et Services sociaux": "Services à la communauté",
+    "Management de projets et de programmes": "Gestion de projets",
+    "Armée et Services de protection": "Armée & protection",
+}
+NIVEAUX = {"PDG": "PDG · VP", "VP": "PDG · VP"}
+
+
+def pourcentages(lignes, renommer=None, exclure=("Autres",)):
+    """Lignes [libellé, part entre 0 et 1] -> [(libellé, %)] triées, libellés renommés et regroupés."""
+    total, ordre = {}, []
+    for l in lignes or []:
+        if len(l) < 2:
+            continue
+        nom = str(l[0] or "").strip().replace("’", "'")
+        v = num(l[1])
+        if v is None or not nom or nom in exclure:
+            continue
+        nom = renommer(nom) if renommer else nom
+        if nom not in total:
+            ordre.append(nom)
+            total[nom] = 0.0
+        total[nom] += v
+    items = [(n, round(total[n] * 100, 2)) for n in ordre]
+    items.sort(key=lambda x: -x[1])
+    return items
+
+
+def top_lignes(items, lignes_max=6, noms_max=4, autres="autres"):
+    """Regroupe les ex aequo sur une ligne (« Portugal · Italie · Espagne ») comme dans les rapports."""
+    rows, i = [], 0
+    while i < len(items) and len(rows) < lignes_max:
+        j = i
+        while j + 1 < len(items) and items[j + 1][1] == items[i][1]:
+            j += 1
+        noms = [n for n, _ in items[i:j + 1]]
+        if len(noms) > noms_max and len(rows) >= 5:
+            break  # longue traîne d'ex aequo : on s'arrête là plutôt que d'afficher une ligne fourre-tout
+        lib = " · ".join(noms) if len(noms) <= noms_max else "%s et %d %s" % (" · ".join(noms[:3]), len(noms) - 3, autres)
+        rows.append([lib, items[i][1]])
+        i = j + 1
+    return rows
+
+
+def nom_pays(code):
+    return PAYS.get(code.upper(), code) if len(code) == 2 else code
+
+
+def nom_lieu(texte):
+    return texte.split(",")[0].strip()
+
+
+def audience_reseau(dossier: Path, conf, reseau):
+    """Bloc « Démographie : pays et villes » (Facebook, Instagram) à partir des répartitions Metricool."""
+    groupes = []
+    pays = charger(dossier, "audience_%s_pays" % reseau, conf.get("audience_%s_pays" % reseau, {}).get("metrics", []))
+    if pays:
+        groupes.append({"title": "Top des pays", "items": top_lignes(pourcentages(pays, nom_pays), 7, 4, "autres pays")})
+    villes = charger(dossier, "audience_%s_villes" % reseau, conf.get("audience_%s_villes" % reseau, {}).get("metrics", []))
+    if villes:
+        groupes.append({"title": "Top des villes", "items": top_lignes(pourcentages(villes, nom_lieu), 7, 4, "autres villes")})
+    groupes = [g for g in groupes if g["items"]]
+    return [{"title": "Démographie : pays et villes", "groups": groupes}] if groupes else None
+
+
+def audience_linkedin(dossier: Path, conf):
+    def lire(nom):
+        return charger(dossier, nom, conf.get(nom, {}).get("metrics", []))
+    blocs = []
+    emplacement = []
+    if lire("audience_linkedin_pays"):
+        emplacement.append({"title": "Top pays", "items": top_lignes(pourcentages(lire("audience_linkedin_pays")), 6)})
+    if lire("audience_linkedin_zones"):
+        emplacement.append({"title": "Principaux emplacements",
+                            "items": top_lignes(pourcentages(lire("audience_linkedin_zones"), nom_lieu), 6)})
+    if emplacement:
+        blocs.append({"title": "Emplacement des abonnés", "groups": emplacement})
+    profil = []
+    if lire("audience_linkedin_secteurs"):
+        profil.append({"title": "Secteurs", "items": top_lignes(pourcentages(lire("audience_linkedin_secteurs"),
+                                                                             lambda n: SECTEURS.get(n, n)), 6)})
+    if lire("audience_linkedin_fonctions"):
+        profil.append({"title": "Fonctions", "items": top_lignes(pourcentages(lire("audience_linkedin_fonctions"),
+                                                                              lambda n: FONCTIONS.get(n, n)), 6)})
+    if lire("audience_linkedin_niveaux"):
+        profil.append({"title": "Niveaux de responsabilité",
+                       "items": top_lignes(pourcentages(lire("audience_linkedin_niveaux"), lambda n: NIVEAUX.get(n, n)), 6)})
+    if profil:
+        blocs.append({"title": "Profil des abonnés", "groups": profil})
+    return blocs or None
+
+
+def concurrents(lignes, champs, colonnes, soi, ordre_prefere):
+    """Tableau des concurrents : Pick & Smile en tête puis les comptes suivis dans Metricool."""
+    rows = []
+    for l in lignes or []:
+        r = dict(zip(champs, l))
+        nom = str(r.get("display") or r.get("name") or r.get("screen") or "").split("|")[0].strip()
+        if not nom:
+            continue
+        row = {"name": nom}
+        for c in colonnes:
+            v = num(r.get(c))
+            row[c] = None if v is None else (entier(v) if c in ("followers", "posts", "reels") else round(v, 2))
+        rows.append(row)
+    if not rows:
+        return None
+    rang = {n: i for i, n in enumerate(ordre_prefere)}
+    rows.sort(key=lambda r: (rang.get(r["name"], len(rang)), -(r.get("followers") or 0)))
+    moi = {"name": "Pick & Smile", "self": True}
+    moi.update({c: soi.get(c) for c in colonnes})
+    return {"columns": colonnes, "rows": [moi] + rows, "note": A_REDIGER}
+
+
+def hashtags(lignes, limite=5):
+    rows = []
+    for l in lignes or []:
+        if len(l) < 4 or not l[0]:
+            continue
+        rows.append({"tag": str(l[0]).strip(), "posts": entier(num(l[1])), "views": entier(num(l[2])),
+                     "likes": entier(num(l[3]))})
+    rows.sort(key=lambda r: (-(r["views"] or 0), -(r["posts"] or 0), r["tag"]))
+    return {"rows": rows[:limite]} if rows else None
+
+
+def blocs_complementaires(dossier: Path, mois_obj):
+    """Ajoute audience, concurrents et hashtags au mois (Facebook, Instagram, LinkedIn) quand les fichiers existent."""
+    conf_all = config()["metricool"]
+    conf = conf_all["requetes"]
+    ordre = conf_all.get("concurrents", {})
+
+    def kv(res, k):
+        v = ((mois_obj.get(res) or {}).get("kpi") or {}).get(k)
+        return v.get("v") if isinstance(v, dict) else v
+    if "facebook" in mois_obj:
+        aud = audience_reseau(dossier, conf, "facebook")
+        if aud:
+            mois_obj["facebook"]["audience"] = aud
+        lignes = charger(dossier, "concurrents_facebook", conf.get("concurrents_facebook", {}).get("metrics", []))
+        if lignes:
+            soi = {k: kv("facebook", k) for k in ("followers", "posts", "reactions", "engagement")}
+            t = concurrents(lignes, ["name", "followers", "posts", "reactions", "engagement"],
+                            ["followers", "posts", "reactions", "engagement"], soi, ordre.get("facebook", []))
+            if t:
+                mois_obj["facebook"]["competitors"] = t
+    if "instagram" in mois_obj:
+        aud = audience_reseau(dossier, conf, "instagram")
+        if aud:
+            mois_obj["instagram"]["audience"] = aud
+        lignes = charger(dossier, "hashtags_instagram", conf.get("hashtags_instagram", {}).get("metrics", []))
+        t = hashtags(lignes)
+        if t:
+            mois_obj["instagram"]["hashtags"] = t
+        lignes = charger(dossier, "concurrents_instagram", conf.get("concurrents_instagram", {}).get("metrics", []))
+        if lignes:
+            soi = {k: kv("instagram", k) for k in ("followers", "posts", "reels", "engagement")}
+            t = concurrents(lignes, ["screen", "display", "followers", "posts", "reels", "engagement"],
+                            ["followers", "posts", "reels", "engagement"], soi, ordre.get("instagram", []))
+            if t:
+                mois_obj["instagram"]["competitors"] = t
+    if "linkedin" in mois_obj:
+        aud = audience_linkedin(dossier, conf)
+        if aud:
+            mois_obj["linkedin"]["audience"] = aud
+    return mois_obj
+
+
 def preparer(mois, dossier: Path):
     conf = config()["metricool"]["requetes"]
     sortie = {"id": mois, "status": "draft", "autoPills": True,
@@ -258,6 +456,7 @@ def preparer(mois, dossier: Path):
             if t["rows"]:
                 sortie["ads"]["tiktok"]["campaigns"] = t
 
+    blocs_complementaires(dossier, sortie)
     sortie["takeaways"] = {"wins": [A_REDIGER], "priorities": [A_REDIGER]}
     return sortie
 

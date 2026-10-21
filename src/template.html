@@ -177,6 +177,21 @@ td.top{font-weight:700;color:var(--ink)}
 td.eng{color:var(--violet-ink);font-weight:700}
 .tnote{font-size:13px;color:var(--muted);padding:12px 16px 10px;border-top:1px solid var(--line)}
 @media (max-width:520px){th,td{padding:11px 12px}}
+table.cmp{min-width:480px}
+td.name{color:var(--ink);white-space:nowrap}
+tr.self td{background:var(--lav-3);color:var(--ink);font-weight:600}
+tr.self td.eng{color:var(--violet-ink);font-weight:700}
+td.tag-h{color:var(--ink);white-space:nowrap}
+
+/* ----- Audience ----- */
+.demo h4{font-size:15px;color:var(--violet-ink);margin-bottom:14px}
+.demo ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.demo li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;align-items:baseline;font-size:13.5px;color:var(--ink-2);line-height:1.35}
+.demo .dl{overflow-wrap:anywhere}
+.demo .dv{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.demo .bar{grid-column:1/-1;display:block;height:6px;border-radius:999px;background:var(--lav-2);overflow:hidden}
+.demo .bar i{display:block;height:100%;border-radius:inherit;background:var(--violet);min-width:4px}
+.demo li:first-child .dv{color:var(--violet-ink)}
 
 /* ----- Analyses ----- */
 .an h4{display:flex;align-items:center;gap:8px;font-size:16px;color:var(--violet-ink);margin-bottom:14px}
@@ -572,6 +587,58 @@ function analysis(groups){
   return h("div",{class:"grid "+(cards.length>=3?"g3":cards.length===2?"g2":"c1")},cards);
 }
 
+/* ================= Audience, concurrents, hashtags ================= */
+function audienceBlocks(tag,list){
+  var out=[];
+  (list||[]).forEach(function(a){
+    if(!a||!a.groups||!a.groups.length)return;
+    out.push(blockHead(tag,a.title));
+    var cards=a.groups.filter(function(g){return g.items&&g.items.length;}).map(function(g){
+      var mx=0;g.items.forEach(function(it){if(it[1]>mx)mx=it[1];});
+      var ul=h("ul");
+      g.items.forEach(function(it){
+        var bar=h("span",{class:"bar","aria-hidden":"true"}),fill=document.createElement("i");
+        fill.style.width=(mx>0?Math.max(it[1]/mx*100,1):0).toFixed(1)+"%";bar.appendChild(fill);
+        ul.appendChild(h("li",null,h("span",{class:"dl",text:it[0]}),h("span",{class:"dv",text:pct(it[1],2)}),bar));
+      });
+      return h("div",{class:"card demo"},h("h4",{text:g.title}),ul);
+    });
+    out.push(h("div",{class:"grid "+(cards.length>=3?"g3":cards.length===2?"g2":"c1")},cards));
+  });
+  return out;
+}
+var CMP={
+  followers:{l:"Abonnés",f:compact},posts:{l:"Publications",f:entier},reels:{l:"Reels*",f:entier},
+  reactions:{l:"Réactions",f:function(v){return Math.round(v)===v?entier(v):dec(v,2);}},
+  engagement:{l:"Engagement*",f:function(v){return dec(v,2);}}
+};
+function competitorsCard(c){
+  if(!c||!c.rows||!c.rows.length)return null;
+  var cols=c.columns||["followers","posts","engagement"];
+  var thead=h("tr",null,h("th",{text:"Compte"}),cols.map(function(k){return h("th",{class:"num"},rich((CMP[k]||{l:k}).l));}));
+  var body=c.rows.map(function(r){
+    return h("tr",{class:r.self?"self":null},h("td",{class:"name",text:r.name}),cols.map(function(k){
+      var v=r[k],sp=CMP[k]||{f:String};
+      return h("td",{class:"num"+(k==="engagement"&&r.self?" eng":""),text:v==null?"—":sp.f(v)});
+    }));
+  });
+  return h("div",{class:"card tcard"},h("div",{class:"twrap"},h("table",{class:"cmp"},h("thead",null,thead),h("tbody",null,body))),
+    c.note?h("p",{class:"tnote"},rich(c.note)):null);
+}
+function hashtagsCard(t){
+  if(!t||!t.rows||!t.rows.length)return null;
+  var mx=-Infinity;t.rows.forEach(function(r){if(r.views!=null&&r.views>mx)mx=r.views;});
+  var uniq=t.rows.filter(function(r){return r.views===mx;}).length===1;
+  var thead=h("tr",null,h("th",{text:"Hashtag"}),h("th",{class:"num",text:"Publications"}),h("th",{class:"num"},rich("Vues* par post")),h("th",{class:"num",text:"J'aime par post"}));
+  var body=t.rows.map(function(r){
+    return h("tr",null,h("td",{class:"tag-h",text:r.tag}),h("td",{class:"num",text:entier(r.posts)}),
+      h("td",{class:"num"+(uniq&&r.views===mx&&t.rows.length>1?" top":""),text:r.views==null?"—":entier(r.views)}),
+      h("td",{class:"num",text:r.likes==null?"—":entier(r.likes)}));
+  });
+  return h("div",{class:"card tcard"},h("div",{class:"twrap"},h("table",{class:"cmp"},h("thead",null,thead),h("tbody",null,body))),
+    t.note?h("p",{class:"tnote"},rich(t.note)):null);
+}
+
 /* ================= Infobulle ================= */
 var TIP=document.getElementById("tip");
 function showTip(e,nodes){
@@ -781,6 +848,7 @@ function secFacebook(m,prevM){
   var ar=kpiData(m,"facebook",null,"avgReachPerPost",C.avgReachPerPost,prevM);
   if(ar){var c=kpiCard(C.avgReachPerPost,ar);if(f.notes&&f.notes.avgReachPerPost)c.appendChild(h("p",{class:"note-text",style:"margin-top:10px"},rich(f.notes.avgReachPerPost)));row.push(c);}
   if(row.length)sec.appendChild(h("div",{class:"grid g2",style:"margin-top:14px"},row));
+  audienceBlocks("Facebook",f.audience).forEach(function(el){sec.appendChild(el);});
   sec.appendChild(blockHead("Facebook","Engagement et interactions"));
   var top=tiles(m,"facebook",null,["engagement","interactions"],prevM,{hl:"engagement"});
   if(top.length)sec.appendChild(h("div",{class:"grid g2"},top));
@@ -789,6 +857,7 @@ function secFacebook(m,prevM){
     h("div",{class:"bp-title",text:bp.title+(bp.date?" · "+dateCourte(bp.date):"")}),bp.text?h("div",{class:"bp-meta",text:bp.text}):null));}
   if(small.length)sec.appendChild(grid(small,null,"margin-top:14px"));
   if(f.posts&&f.posts.rows&&f.posts.rows.length){sec.appendChild(blockHead("Facebook","Classement des posts"));sec.appendChild(tableCard(f.posts));}
+  var fc=competitorsCard(f.competitors);if(fc){sec.appendChild(blockHead("Facebook","Les concurrents"));sec.appendChild(fc);}
   if(f.analysis){sec.appendChild(blockHead("Facebook","Analyses et recommandations"));sec.appendChild(analysis(f.analysis));}
   return sec;
 }
@@ -797,6 +866,7 @@ function secInstagram(m,prevM){
   var sec=h("section",{class:"sec",id:"instagram"},banner(m,"Instagram"));
   sec.appendChild(blockHead("Instagram","Croissance de la communauté"));
   sec.appendChild(grid(tiles(m,"instagram",null,["followers","followersGained","followersLost","netFollowers","contents"],prevM,{hl:"followers"})));
+  audienceBlocks("Instagram",g.audience).forEach(function(el){sec.appendChild(el);});
   sec.appendChild(blockHead("Instagram","Visibilité du compte"));
   sec.appendChild(grid(tiles(m,"instagram",null,["views","reachTotal","reachPerDay","avgReachPerPost","storyImpressions","avgReachPerStory"],prevM)));
   var row=[];if(g.noteCard)row.push(noteCard(g.noteCard.title,g.noteCard.text));
@@ -814,6 +884,8 @@ function secInstagram(m,prevM){
     if(rt.length)sec.appendChild(grid(rt,null,"margin-bottom:14px"));
     sec.appendChild(tableCard(g.reels));
   }
+  var ht=hashtagsCard(g.hashtags);if(ht){sec.appendChild(blockHead("Instagram","Classement des hashtags"));sec.appendChild(ht);}
+  var gc=competitorsCard(g.competitors);if(gc){sec.appendChild(blockHead("Instagram","Les concurrents"));sec.appendChild(gc);}
   if(g.analysis){sec.appendChild(blockHead("Instagram","Analyses et recommandations"));sec.appendChild(analysis(g.analysis));}
   return sec;
 }
@@ -822,6 +894,7 @@ function secLinkedin(m,prevM){
   var sec=h("section",{class:"sec",id:"linkedin"},banner(m,"LinkedIn"));
   sec.appendChild(blockHead("LinkedIn","Communauté et contenu"));
   sec.appendChild(grid(tiles(m,"linkedin",null,["followers","posts","impressions","postImpressions","reactions","clicks","pageViews","uniqueVisitors","interactions","shares","comments","engagement"],prevM)));
+  audienceBlocks("LinkedIn",l.audience).forEach(function(el){sec.appendChild(el);});
   if(l.posts&&l.posts.rows&&l.posts.rows.length){sec.appendChild(blockHead("LinkedIn","Classement des posts"));sec.appendChild(tableCard(l.posts));}
   if(l.analysis){sec.appendChild(blockHead("LinkedIn","Analyses et recommandations"));sec.appendChild(analysis(l.analysis));}
   return sec;

@@ -145,7 +145,99 @@
           "KADC11",
           "KADC13"
         ]
+      },
+      "audience_facebook_pays": {
+        "metrics": [
+          "FBDP03",
+          "FBDP04"
+        ]
+      },
+      "audience_facebook_villes": {
+        "metrics": [
+          "FBDC03",
+          "FBDC04"
+        ]
+      },
+      "audience_instagram_pays": {
+        "metrics": [
+          "IGDP01",
+          "IGDP02"
+        ]
+      },
+      "audience_instagram_villes": {
+        "metrics": [
+          "IGDC01",
+          "IGDC02"
+        ]
+      },
+      "audience_linkedin_pays": {
+        "metrics": [
+          "LIDC01",
+          "LIDC02"
+        ]
+      },
+      "audience_linkedin_zones": {
+        "metrics": [
+          "LIDA01",
+          "LIDA02"
+        ]
+      },
+      "audience_linkedin_secteurs": {
+        "metrics": [
+          "LIDI01",
+          "LIDI02"
+        ]
+      },
+      "audience_linkedin_fonctions": {
+        "metrics": [
+          "LIDF01",
+          "LIDF02"
+        ]
+      },
+      "audience_linkedin_niveaux": {
+        "metrics": [
+          "LIDS01",
+          "LIDS02"
+        ]
+      },
+      "concurrents_facebook": {
+        "metrics": [
+          "FBCO13",
+          "FBCO06",
+          "FBCO07",
+          "FBCO08",
+          "FBCO10"
+        ]
+      },
+      "concurrents_instagram": {
+        "metrics": [
+          "IGCO02",
+          "IGCO03",
+          "IGCO07",
+          "IGCO08",
+          "IGCO12",
+          "IGCO10"
+        ]
+      },
+      "hashtags_instagram": {
+        "metrics": [
+          "IGHT01",
+          "IGHT03",
+          "IGHT06",
+          "IGHT04"
+        ]
       }
+    },
+    "concurrents": {
+      "facebook": [
+        "DPD France",
+        "Pickup",
+        "Mondial Relay"
+      ],
+      "instagram": [
+        "Chronopost",
+        "Mondial Relay"
+      ]
     }
   }
 }
