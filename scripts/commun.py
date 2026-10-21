@@ -24,10 +24,14 @@ def mot_de_passe():
     return mdp
 
 
-def cle():
+def cle_pour(mdp: str):
     site = config()["site"]
-    return hashlib.pbkdf2_hmac("sha256", mot_de_passe().encode("utf-8"),
+    return hashlib.pbkdf2_hmac("sha256", mdp.encode("utf-8"),
                                base64.b64decode(site["salt"]), int(site["iterations"]), dklen=32)
+
+
+def cle():
+    return cle_pour(mot_de_passe())
 
 
 def chiffrer(cle_, clair: bytes) -> dict:

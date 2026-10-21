@@ -26,3 +26,10 @@ Toutes les commandes demandent le mot de passe dans la variable `PS_MOT_DE_PASSE
 6. Après validation : `python3 scripts/donnees.py publier AAAA-MM` puis `python3 scripts/build.py`.
 
 Dépendance Python : `cryptography`.
+
+## Changer le mot de passe
+
+1. `PS_MOT_DE_PASSE=ancien PS_NOUVEAU_MOT_DE_PASSE=nouveau python3 scripts/donnees.py changer-mot-de-passe`
+2. `PS_MOT_DE_PASSE=nouveau python3 scripts/build.py`
+
+Les personnes restées connectées devront saisir le nouveau mot de passe à leur prochaine visite.

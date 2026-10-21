@@ -9,6 +9,8 @@
   publier AAAA-MM           rend le mois visible par le client
   retirer AAAA-MM           supprime un mois en attente
   verifier [FICHIER]        contrôle la structure et repère les textes restés à rédiger
+  changer-mot-de-passe      rechiffre les données avec le mot de passe de PS_NOUVEAU_MOT_DE_PASSE
+                            (relancer ensuite build.py avec le nouveau mot de passe)
 
 Toutes les commandes lisent le mot de passe dans PS_MOT_DE_PASSE.
 """
@@ -80,6 +82,16 @@ def main(argv):
     cle_ = cle()
     donnees = lire_donnees(cle_)
 
+    if cmd == "changer-mot-de-passe":
+        import os
+        nouveau = os.environ.get("PS_NOUVEAU_MOT_DE_PASSE", "")
+        if len(nouveau) < 8:
+            print("Indique le nouveau mot de passe (8 caractères minimum) dans PS_NOUVEAU_MOT_DE_PASSE.")
+            return 1
+        from commun import cle_pour
+        ecrire_donnees(donnees, cle_pour(nouveau))
+        print("Données rechiffrées avec le nouveau mot de passe. Relance build.py avec PS_MOT_DE_PASSE égal au nouveau.")
+        return 0
     if cmd == "resume":
         for m in donnees["months"]:
             print("%s  %s" % (m["id"], "publié" if m.get("status") == "published" else "en attente de validation"))
